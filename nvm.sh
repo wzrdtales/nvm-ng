@@ -2916,6 +2916,7 @@ nvm() {
       if [ -n "${NVM_USE_OUTPUT-}" ]; then
         nvm_echo "$NVM_USE_OUTPUT"
       fi
+      echo $NVM_VERSION_DIR > ${NVM_DIR}/NVM_LAST_USED
     ;;
     "run" )
       local provided_version
@@ -3492,6 +3493,33 @@ nvm_auto() {
     elif nvm_rc_version >/dev/null 2>&1; then
       nvm use --silent >/dev/null
     fi
+  elif [ "_$NVM_MODE" = '_last' ]; then
+    local NVM_VERSION_DIR=`cat ${NVM_DIR}/NVM_LAST_USED`
+    # Strip other version from PATH
+    PATH="$(nvm_strip_path "$PATH" "/bin")"
+    # Prepend current version
+    PATH="$(nvm_prepend_path "$PATH" "$NVM_VERSION_DIR/bin")"
+    if nvm_has manpath; then
+      if [ -z "${MANPATH-}" ]; then
+        local MANPATH
+        MANPATH=$(manpath)
+      fi
+      # Strip other version from MANPATH
+      MANPATH="$(nvm_strip_path "$MANPATH" "/share/man")"
+      # Prepend current version
+      MANPATH="$(nvm_prepend_path "$MANPATH" "$NVM_VERSION_DIR/share/man")"
+      export MANPATH
+    fi
+    export PATH
+    hash -r
+    export NVM_BIN="$NVM_VERSION_DIR/bin"
+    if [ "${NVM_SYMLINK_CURRENT-}" = true ]; then
+      command rm -f "$NVM_DIR/current" && ln -s "$NVM_VERSION_DIR" "$NVM_DIR/current"
+    fi
+    if [ -n "${NVM_USE_OUTPUT-}" ]; then
+      nvm_echo "$NVM_USE_OUTPUT"
+    fi
+
   elif [ "_$NVM_MODE" != '_none' ]; then
     nvm_err 'Invalid auto mode supplied.'
     return 1
@@ -3507,6 +3535,7 @@ nvm_process_parameters() {
       case "$1" in
         --install) NVM_AUTO_MODE='install' ;;
         --no-use) NVM_AUTO_MODE='none' ;;
+        --fast-reuse) NVM_AUTO_MODE='last' ;;
       esac
       shift
     done
