@@ -2138,7 +2138,7 @@ nvm_die_on_prefix() {
   fi
 
   local NVM_NPM_PREFIX
-  local npmrcs=("." "$HOME")
+  local npmrcs=". $HOME"
 
   for npmrc in $npmrcs; do
     if [ -f "${npmrc}/.npmrc" ]; then
