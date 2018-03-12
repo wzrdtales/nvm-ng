@@ -11,7 +11,7 @@ nvm_install_dir() {
 }
 
 nvm_latest_version() {
-  echo "v0.33.8"
+  echo "v0.33.9"
 }
 
 nvm_profile_is_bash_or_zsh() {
@@ -39,14 +39,14 @@ nvm_source() {
   local NVM_SOURCE_URL
   NVM_SOURCE_URL="$NVM_SOURCE"
   if [ "_$NVM_METHOD" = "_script-nvm-exec" ]; then
-    NVM_SOURCE_URL="https://raw.githubusercontent.com/creationix/nvm/$(nvm_latest_version)/nvm-exec"
+    NVM_SOURCE_URL="https://raw.githubusercontent.com/wzrdtales/nvm-ng/$(nvm_latest_version)/nvm-exec"
   elif [ "_$NVM_METHOD" = "_script-nvm-bash-completion" ]; then
-    NVM_SOURCE_URL="https://raw.githubusercontent.com/creationix/nvm/$(nvm_latest_version)/bash_completion"
+    NVM_SOURCE_URL="https://raw.githubusercontent.com/wzrdtales/nvm-ng/$(nvm_latest_version)/bash_completion"
   elif [ -z "$NVM_SOURCE_URL" ]; then
     if [ "_$NVM_METHOD" = "_script" ]; then
-      NVM_SOURCE_URL="https://raw.githubusercontent.com/creationix/nvm/$(nvm_latest_version)/nvm.sh"
+      NVM_SOURCE_URL="https://raw.githubusercontent.com/wzrdtales/nvm-ng/$(nvm_latest_version)/nvm.sh"
     elif [ "_$NVM_METHOD" = "_git" ] || [ -z "$NVM_METHOD" ]; then
-      NVM_SOURCE_URL="https://github.com/creationix/nvm.git"
+      NVM_SOURCE_URL="https://github.com/wzrdtales/nvm-ng.git"
     else
       echo >&2 "Unexpected value \"$NVM_METHOD\" for \$NVM_METHOD"
       return 1
