@@ -3542,7 +3542,8 @@ nvm_auto() {
       nvm use --silent >/dev/null
     fi
   elif [ "_$NVM_MODE" = '_last' ]; then
-    local NVM_VERSION_DIR=$(cat "${NVM_DIR}/NVM_LAST_USED")
+    local NVM_VERSION_DIR
+    NVM_VERSION_DIR=$(cat "${NVM_DIR}/NVM_LAST_USED")
     # Strip other version from PATH
     PATH="$(nvm_strip_path "$PATH" "/bin")"
     # Prepend current version
