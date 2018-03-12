@@ -2138,7 +2138,7 @@ nvm_die_on_prefix() {
   fi
 
   local NVM_NPM_PREFIX
-  local npmrcs=". $HOME"
+  local npmrcs=("." "$HOME")
 
   for npmrc in $npmrcs; do
     if [ -f "${npmrc}/.npmrc" ]; then
@@ -3542,7 +3542,7 @@ nvm_auto() {
     # Strip other version from PATH
     PATH="$(nvm_strip_path "$PATH" "/bin")"
     # Prepend current version
-    PATH="$(nvm_prepend_path "$PATH" "$NVM_VERSION_DIR/bin")"
+    PATH="$(nvm_change_path "$PATH" "$NVM_VERSION_DIR/bin")"
     if nvm_has manpath; then
       if [ -z "${MANPATH-}" ]; then
         local MANPATH
@@ -3551,7 +3551,7 @@ nvm_auto() {
       # Strip other version from MANPATH
       MANPATH="$(nvm_strip_path "$MANPATH" "/share/man")"
       # Prepend current version
-      MANPATH="$(nvm_prepend_path "$MANPATH" "$NVM_VERSION_DIR/share/man")"
+      MANPATH="$(nvm_change_path "$MANPATH" "$NVM_VERSION_DIR/share/man")"
       export MANPATH
     fi
     export PATH
