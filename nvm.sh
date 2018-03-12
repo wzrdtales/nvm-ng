@@ -10,7 +10,7 @@
 # shellcheck disable=SC2039,SC2016,SC2001
 { # this ensures the entire script is downloaded #
 
-if [ -n "$ZSH_VERSION" ]; then
+if [ -z "$ZSH_VERSION" ]; then
   setopt sh_word_split
 fi
 
