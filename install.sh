@@ -7,11 +7,11 @@ nvm_has() {
 }
 
 nvm_install_dir() {
-  printf %s "${NVM_DIR:-"$HOME/.nvm"}"
+  command printf %s "${NVM_DIR:-"$HOME/.nvm"}"
 }
 
 nvm_latest_version() {
-  echo "v0.33.2"
+  echo "v0.33.8"
 }
 
 nvm_profile_is_bash_or_zsh() {
@@ -68,12 +68,12 @@ nvm_download() {
   elif nvm_has "wget"; then
     # Emulate curl with wget
     ARGS=$(echo "$*" | command sed -e 's/--progress-bar /--progress=bar /' \
-                           -e 's/-L //' \
-                           -e 's/--compressed //' \
-                           -e 's/-I /--server-response /' \
-                           -e 's/-s /-q /' \
-                           -e 's/-o /-O /' \
-                           -e 's/-C - /-c /')
+                            -e 's/-L //' \
+                            -e 's/--compressed //' \
+                            -e 's/-I /--server-response /' \
+                            -e 's/-s /-q /' \
+                            -e 's/-o /-O /' \
+                            -e 's/-C - /-c /')
     # shellcheck disable=SC2086
     eval wget $ARGS
   fi
@@ -85,7 +85,7 @@ install_nvm_from_git() {
 
   if [ -d "$INSTALL_DIR/.git" ]; then
     echo "=> nvm is already installed in $INSTALL_DIR, trying to update using git"
-    command printf "\r=> "
+    command printf '\r=> '
     command git --git-dir="$INSTALL_DIR"/.git --work-tree="$INSTALL_DIR" fetch origin tag "$(nvm_latest_version)" --depth=1 2> /dev/null || {
       echo >&2 "Failed to update nvm, run 'git fetch' in $INSTALL_DIR yourself."
       exit 1
@@ -93,7 +93,7 @@ install_nvm_from_git() {
   else
     # Cloning to $INSTALL_DIR
     echo "=> Downloading nvm from git to '$INSTALL_DIR'"
-    command printf "\r=> "
+    command printf '\r=> '
     mkdir -p "${INSTALL_DIR}"
     if [ "$(ls -A "${INSTALL_DIR}")" ]; then
       command git init "${INSTALL_DIR}" || {
@@ -110,13 +110,13 @@ install_nvm_from_git() {
         exit 2
       }
     else
-      command git clone "$(nvm_source)" -b "$(nvm_latest_version)" --depth=1 "${INSTALL_DIR}" || {
+      command git -c advice.detachedHead=false clone "$(nvm_source)" -b "$(nvm_latest_version)" --depth=1 "${INSTALL_DIR}" || {
         echo >&2 'Failed to clone nvm repo. Please report this!'
         exit 2
       }
     fi
   fi
-  command git --git-dir="$INSTALL_DIR"/.git --work-tree="$INSTALL_DIR" checkout -f --quiet "$(nvm_latest_version)"
+  command git -c advice.detachedHead=false --git-dir="$INSTALL_DIR"/.git --work-tree="$INSTALL_DIR" checkout -f --quiet "$(nvm_latest_version)"
   if [ ! -z "$(command git --git-dir="$INSTALL_DIR"/.git --work-tree="$INSTALL_DIR" show-ref refs/heads/master)" ]; then
     if command git --git-dir="$INSTALL_DIR"/.git --work-tree="$INSTALL_DIR" branch --quiet 2>/dev/null; then
       command git --git-dir="$INSTALL_DIR"/.git --work-tree="$INSTALL_DIR" branch --quiet -D master >/dev/null 2>&1
@@ -140,22 +140,22 @@ install_nvm_from_git() {
 # Automatically install Node.js
 #
 nvm_install_node() {
-  local NODE_VERSION
-  NODE_VERSION="$(nvm_node_version)"
+  local NODE_VERSION_LOCAL
+  NODE_VERSION_LOCAL="$(nvm_node_version)"
 
-  if [ -z "$NODE_VERSION" ]; then
+  if [ -z "$NODE_VERSION_LOCAL" ]; then
     return 0
   fi
 
-  echo "=> Installing Node.js version $NODE_VERSION"
-  nvm install "$NODE_VERSION"
+  echo "=> Installing Node.js version $NODE_VERSION_LOCAL"
+  nvm install "$NODE_VERSION_LOCAL"
   local CURRENT_NVM_NODE
 
   CURRENT_NVM_NODE="$(nvm_version current)"
-  if [ "$(nvm_version "$NODE_VERSION")" == "$CURRENT_NVM_NODE" ]; then
-    echo "=> Node.js version $NODE_VERSION has been successfully installed"
+  if [ "$(nvm_version "$NODE_VERSION_LOCAL")" == "$CURRENT_NVM_NODE" ]; then
+    echo "=> Node.js version $NODE_VERSION_LOCAL has been successfully installed"
   else
-    echo >&2 "Failed to install Node.js $NODE_VERSION"
+    echo >&2 "Failed to install Node.js $NODE_VERSION_LOCAL"
   fi
 }
 
@@ -188,7 +188,7 @@ install_nvm_as_script() {
     echo >&2 "Failed to download '$NVM_BASH_COMPLETION_SOURCE'"
     return 2
   } &
-  for job in $(jobs -p | sort)
+  for job in $(jobs -p | command sort)
   do
     wait "$job" || return $?
   done
@@ -268,7 +268,7 @@ nvm_check_global_modules() {
   MODULE_COUNT="$(
     command printf %s\\n "$NPM_GLOBAL_MODULES" |
     command sed -ne '1!p' |                     # Remove the first line
-    wc -l | tr -d ' '                           # Count entries
+    wc -l | command tr -d ' '                   # Count entries
   )"
 
   if [ "${MODULE_COUNT}" != '0' ]; then
@@ -294,6 +294,10 @@ nvm_check_global_modules() {
 }
 
 nvm_do_install() {
+  if [ -n "${NVM_DIR-}" ] && ! [ -d "${NVM_DIR}" ]; then
+    echo >&2 "You have \$NVM_DIR set to \"${NVM_DIR}\", but that directory does not exist. Check your profile files and environment."
+    exit 1
+  fi
   if [ -z "${METHOD}" ]; then
     # Autodetect install method
     if nvm_has git; then
@@ -323,16 +327,20 @@ nvm_do_install() {
   local NVM_PROFILE
   NVM_PROFILE="$(nvm_detect_profile)"
   local PROFILE_INSTALL_DIR
-  PROFILE_INSTALL_DIR="$(nvm_install_dir| sed "s:^$HOME:\$HOME:")"
+  PROFILE_INSTALL_DIR="$(nvm_install_dir | command sed "s:^$HOME:\$HOME:")"
 
-  SOURCE_STR="\nexport NVM_DIR=\"${PROFILE_INSTALL_DIR}\"\n[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\"  # This loads nvm\n"
-  COMPLETION_STR="[ -s \"\$NVM_DIR/bash_completion\" ] && \\. \"\$NVM_DIR/bash_completion\"  # This loads nvm bash_completion\n"
+  SOURCE_STR="\\nexport NVM_DIR=\"${PROFILE_INSTALL_DIR}\"\\n[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\"  # This loads nvm\\n"
+  # shellcheck disable=SC2016
+  COMPLETION_STR='[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion\n'
   BASH_OR_ZSH=false
 
   if [ -z "${NVM_PROFILE-}" ] ; then
-    echo "=> Profile not found. Tried ${NVM_PROFILE} (as defined in \$PROFILE), ~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile."
+    local TRIED_PROFILE
+    if [ -n "${PROFILE}" ]; then
+      TRIED_PROFILE="${NVM_PROFILE} (as defined in \$PROFILE), "
+    fi
+    echo "=> Profile not found. Tried ${TRIED_PROFILE-}~/.bashrc, ~/.bash_profile, ~/.zshrc, and ~/.profile."
     echo "=> Create one of them and run this script again"
-    echo "=> Create it (touch ${NVM_PROFILE}) and run this script again"
     echo "   OR"
     echo "=> Append the following lines to the correct file yourself:"
     command printf "${SOURCE_STR}"
