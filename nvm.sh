@@ -1153,8 +1153,7 @@ nvm_ls_remote_index_tab() {
   local LTS_ALIAS
   local LTS_VERSION
   command mkdir -p "$(nvm_alias_path)/lts"
-  nvm_echo "${VERSION_LIST}" \
-    | command awk '{
+  { command awk '{
         if ($10 ~ /^\-?$/) { next }
         if ($10 && !a[tolower($10)]++) {
           if (alias) { print alias, version }
@@ -1173,7 +1172,9 @@ nvm_ls_remote_index_tab() {
       LTS_ALIAS="${LTS_ALIAS_LINE%% *}"
       LTS_VERSION="${LTS_ALIAS_LINE#* }"
       nvm_make_alias "$LTS_ALIAS" "$LTS_VERSION" >/dev/null 2>&1
-    done
+    done; } << EOF
+$VERSION_LIST
+EOF
 
   VERSIONS="$(nvm_echo "${VERSION_LIST}" \
     | command awk -v pattern="${PATTERN-}" -v lts="${LTS-}" '{
