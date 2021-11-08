@@ -1176,19 +1176,26 @@ nvm_ls_remote_index_tab() {
 $VERSION_LIST
 EOF
 
-  VERSIONS="$(nvm_echo "${VERSION_LIST}" \
-    | command awk -v pattern="${PATTERN-}" -v lts="${LTS-}" '{
+    VERSIONS="$({ command awk -v lts="${LTS-}" '{
         if (!$1) { next }
-        if (pattern && tolower($1) !~ tolower(pattern)) { next }
-        if (lts == "*" && $10 ~ /^\-?$/) { next }
+        if (lts && $10 ~ /^\-?$/) { next }
         if (lts && lts != "*" && tolower($10) !~ tolower(lts)) { next }
-        if ($10 !~ /^\-?$/) print $1, $10; else print $1
+        if ($10 !~ /^\-?$/) {
+          if ($10 && $10 != prev) {
+            print $1, $10, "*"
+          } else {
+            print $1, $10
+          }
+        } else {
+          print $1
+        }
+        prev=$10;
       }' \
     | nvm_grep -w "${PATTERN:-.*}" \
-    | $SORT_COMMAND)"
-  if [ "$ZSH_HAS_SHWORDSPLIT_UNSET" -eq 1 ] && nvm_has "unsetopt"; then
-    unsetopt shwordsplit
-  fi
+    | $SORT_COMMAND; } << EOF
+$VERSION_LIST
+EOF
+)"
   if [ -z "${VERSIONS}" ]; then
     nvm_echo 'N/A'
     return 3
